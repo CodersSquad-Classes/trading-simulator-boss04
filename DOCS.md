@@ -60,29 +60,44 @@ Below is the high-level design of the system, split into components.
 ### 3.1 Architecture Diagram
 
 ```text
-                        ┌──────────────────────┐
-                        │     MatchingEngine    │
-                        │  - generates orders   │
-                        │  - submits to book    │
-                        └───────────┬──────────┘
-                                    │
-                                    │
-                        ┌──────────────────────┐
-                        │      OrderBook        │
-                        │  Buy PQ ←──────────┐  │
-                        │                    │  │
-                        │  Sell PQ────────→  │  │
-                        │                    │  │
-                        │  Matching Logic     │
-                        └───────────┬──────────┘
-                                    │
-                                    │ Trades
-                                    ▼
-                        ┌──────────────────────┐
-                        │       TerminalUI      │
-                        │ Shows order book +    │
-                        │ recent executed trades │
-                        └──────────────────────┘
+                                                   ┌──────────────────────┐
+                           │       main.cpp        │
+                           │  - simulation loop    │
+                           │  - generate → submit  │
+                           └───────────┬──────────┘
+                                       │
+                                       ▼
+                           ┌──────────────────────┐
+                           │    MatchingEngine    │
+                           │ - generates orders   │
+                           │ - timestamps / IDs   │
+                           │ - sends to OrderBook │
+                           └───────────┬──────────┘
+                                       │
+                                       ▼
+                           ┌──────────────────────┐
+                           │      OrderBook        │
+                           │  ┌──────────────────┐ │
+                           │  │   Buy PQ         │ │
+                           │  │ (best price/time)│ │
+                           │  └──────────────────┘ │
+                           │  ┌──────────────────┐ │
+                           │  │   Sell PQ        │ │
+                           │  │ (best price/time)│ │
+                           │  └──────────────────┘ │
+                           │                      │
+                           │  Matching Logic       │
+                           └───────────┬──────────┘
+                                       │
+                                       │ Trades
+                                       ▼
+                           ┌──────────────────────┐
+                           │      TerminalUI       │
+                           │  - displays Buy PQ    │
+                           │  - displays Sell PQ   │
+                           │  - shows last trades  │
+                           └──────────────────────┘
+
 ````
 
 ### 3.2 Component Overview
