@@ -8,13 +8,73 @@ A continuous limit order book (CLOB) is a trading system used by exchanges to ma
 On this challenge, you're implementing a Continuos Limit Order Book (CLOB). Buyers and sellers will be **dynamically** created and then displayed in a **real-time dashboard**. Consider that your implementation should look **as realist as possible** (you can use colors). You are free to choose the number of rows to display. Take a look in the following [document](https://faculty.haas.berkeley.edu/hender/ITpro.pdf), the Island's limit order book can be a good example of what is expected, but in terminal.
 
 
-## How to build and run
+## How to Build and Run
 
-_ADD YOUR INSTRUCTIONS HERE_
+You can build this project in two different ways:
 
+---
+
+### **Option 1: Using g++ (no Makefile required)**
+
+Compile all `.cpp` files into a single executable:
+
+```bash
+g++ -std=c++17 -O2 main.cpp order_book.cpp matching_engine.cpp ui.cpp -o trading_sim
+```
+
+### Then run the simulator:
+On Linux / macOS:
+```
+./trading_sim
+```
+
+On Windows (PowerShell or CMD):
+```
+.\trading_sim.exe
+```
+
+### Option 2: Using Makefile
+If you prefer using make, simply run:
+````
+make
+````
+
+This will create an executable named:
+
+````
+trading_sim
+````
+### To run it:
+
+On Linux / macOS:
+````
+./trading_sim
+````
+On Windows:
+````
+.\trading_sim.exe
+````
+
+### Execution Details
+
+#### When running the simulator:
+
+- The engine continuously generates random buy and sell limit orders.
+
+- Orders are matched using price–time priority, just like in a real stock exchange.
+
+- The terminal updates every ~300 ms showing:
+
+- Best BUY orders
+
+- Best SELL orders
+
+- Last executed trades
+
+- Press Ctrl + C to stop the simulation.
 
 ## Deliverables
-
+``
 - Source code must be implemented in `*.cpp` and `*.h` files
 - Instructions at [How to build and run](#how-to-build-and-run) section
 - [DOCS.md](./DOCS.md)
