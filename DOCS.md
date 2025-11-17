@@ -1,84 +1,144 @@
-# Trading Simulator — DOCS
+# Trading Simulator — Documentation
 
 ## 1. Introduction
 
-This project implements a Continuous Limit Order Book (CLOB) for a simple stock trading simulator.  
-The goal is to simulate how real stock exchanges match limit orders from buyers and sellers using:
+This project implements a **Continuous Limit Order Book (CLOB)** for a simple stock trading simulator.  
+The goal is to simulate how real stock exchanges match **limit orders** from buyers and sellers using:
 
-- Price priority: better prices first.
-- Time priority: older orders first when prices are equal.
+- **Price priority**: better prices are matched first.
+- **Time priority**: older orders are executed before newer ones when prices are equal.
 
-The system runs in the terminal and shows a small dashboard with:
+The simulator runs directly in the terminal and displays:
 
-- Top buy orders.
-- Top sell orders.
+- The top buy orders.
+- The top sell orders.
 - Recently executed trades.
 
-Everything is implemented in C++ using priority queues.
+All logic is implemented in C++ using **priority queues**, which makes the behavior relatively realistic compared to simplified market models.
 
 ---
 
 ## 2. Research on Stock Exchanges
 
-Modern stock exchanges use electronic trading systems instead of floor trading.
+Modern Exchanges such as NASDAQ and NYSE operate using **electronic limit order books**, not floor trading like in the past.  
+The trading model is simple in theory but complex in practice:
 
-A limit order is:
+### **Limit Orders**
+- **Buy Limit:** Buy *at or below* a specified price.  
+- **Sell Limit:** Sell *at or above* a specified price.
 
-- Buy: order to buy a quantity at or below a given price.
-- Sell: order to sell a quantity at or above a given price.
+### **CLOB — Continuous Limit Order Book**
+A CLOB keeps two dynamic lists:
 
-A Continuous Limit Order Book (CLOB):
+- **Bids (Buy Orders)**  
+- **Asks (Sell Orders)**  
 
-- Keeps two lists (books):
-  - Bids (buy orders)
-  - Asks (sell orders)
-- Orders are ranked:
-  - By price (best prices at the top)
-  - Then by time (first order in when prices are equal)
-- When a new order arrives, the engine:
-  - Checks if it can match against existing orders on the other side.
-  - If compatible, trades are executed immediately.
-  - Remaining quantity (if any) stays in the book.
+Orders are sorted using:
 
-This simulator is a simplified version of the CLOBs used in real systems such as electronic communication networks (ECNs).
+1. **Price Priority**  
+   - Highest bid first  
+   - Lowest ask first  
+
+2. **Time Priority**  
+   - Earlier orders at the same price get matched first  
+
+When a compatible order arrives, the matching engine executes a trade:
+
+- Quantity traded = minimum of both order quantities  
+- Remaining parts of orders (if any) stay in the book  
+
+This simulator is a simplified model inspired by actual electronic trading systems (ECNs) used by modern exchanges.
 
 ---
 
 ## 3. Software Design and Implementation
 
-### 3.1 Main Components
+Below is the high-level design of the system, split into components.
 
-- `Order`
-  - Basic data for an order (id, stock, price, quantity, side, timestamp).
+---
 
-- `OrderBook`
-  - Stores orders in two priority queues:
-    - `buyOrders`: best highest price first, then earliest time.
-    - `sellOrders`: best lowest price first, then earliest time.
-  - Matches new orders against the opposite side.
+### 3.1 Architecture Diagram
 
-- `MatchingEngine`
-  - Wraps a single `OrderBook` for one symbol (e.g., `ACME`).
-  - Generates random orders to simulate traders.
-  - Submits orders to the book and returns executed trades.
+```text
+                        ┌──────────────────────┐
+                        │     MatchingEngine    │
+                        │  - generates orders   │
+                        │  - submits to book    │
+                        └───────────┬──────────┘
+                                    │
+                                    │
+                        ┌──────────────────────┐
+                        │      OrderBook        │
+                        │  Buy PQ ←──────────┐  │
+                        │                    │  │
+                        │  Sell PQ────────→  │  │
+                        │                    │  │
+                        │  Matching Logic     │
+                        └───────────┬──────────┘
+                                    │
+                                    │ Trades
+                                    ▼
+                        ┌──────────────────────┐
+                        │       TerminalUI      │
+                        │ Shows order book +    │
+                        │ recent executed trades │
+                        └──────────────────────┘
 
-- `TerminalUI`
-  - Clears the screen and prints:
-    - Top N buy orders.
-    - Top N sell orders.
-    - Last trades.
-  - Uses ANSI colors (green for buys, red for sells, cyan for headers).
+### 3.2 Component Overview
 
-- `main`
-  - Main loop:
-    - Generate random order.
-    - Submit to engine.
-    - Update and redraw UI.
-    - Sleep for a short delay.
+#### **Order**
+Represents a single limit order containing:
+- `id`
+- `symbol`
+- `price`
+- `quantity`
+- `side` (buy/sell)
+- `timestamp`
 
-### 3.2 Data Structures
+---
 
-**Buy priority queue:**
+#### **OrderBook**
+Handles the storage and matching of orders using two priority queues:
+
+- **buyOrders:**  
+  Sorted by highest price first → oldest timestamp first  
+- **sellOrders:**  
+  Sorted by lowest price first → oldest timestamp first  
+
+Implements the matching logic between compatible buy and sell orders.
+
+---
+
+#### **MatchingEngine**
+Responsible for driving the simulation:
+- Generates random limit orders to simulate real market flow.
+- Sends orders to the `OrderBook`.
+- Receives a list of trades produced by the matching process.
+
+---
+
+#### **TerminalUI**
+Displays real-time market information such as:
+- Top buy orders  
+- Top sell orders  
+- Last executed trades  
+
+Uses ANSI colors and a refreshing terminal display to emulate a live trading dashboard.
+
+---
+
+#### **main.cpp**
+Implements the simulation loop:
+1. Generate a random order  
+2. Submit it to the matching engine  
+3. Update and draw the user interface  
+4. Wait ~300 ms before the next cycle  
+
+---
+
+### 3.3 Priority Queues (Core Data Structure)
+
+#### **Buy Priority Queue**
 
 ```cpp
 std::priority_queue<Order, std::vector<Order>, BuyComparator> buyOrders;
@@ -88,13 +148,13 @@ struct BuyComparator {
         if (a.price == b.price) {
             return a.timestamp > b.timestamp; // older order wins
         }
-        return a.price < b.price; // higher price gets higher priority
+        return a.price < b.price; // higher price = higher priority
     }
 };
+```
 
-### Sell priority queue:
-
-````
+### Sell Priority Queue
+```
 std::priority_queue<Order, std::vector<Order>, SellComparator> sellOrders;
 
 struct SellComparator {
@@ -102,33 +162,48 @@ struct SellComparator {
         if (a.price == b.price) {
             return a.timestamp > b.timestamp; // older order wins
         }
-        return a.price > b.price; // lower price gets higher priority
+        return a.price > b.price; // lower price = higher priority
     }
 };
 
-## 3.3 Matching Algorithm (High-Level)
+```
+### 3.4 Matching Algorithm (High-Level)
+When a new buy order arrives:
+```
+while buy has quantity:
+    check best sell
+    if sell.price > buy.price → stop
+    trade = min(buy.qty, sell.qty)
+    update quantities
+    remove empty orders
+if buy still has quantity → push into buy PQ
 
-### For a new buy order:
+```
+### When a new sell order arrives:
 
-While there is quantity remaining and there are sell orders:
-
-Take the best sell (top of sellOrders).
-
-If bestSell.price > buy.price, stop (no more matches).
-
-Otherwise:
-
-tradedQty = min(buy.quantity, bestSell.quantity).
-
-Create a Trade record.
-
-Decrease quantities.
-
-Remove orders that reach zero quantity from the queue.
-
-If the buy order still has quantity left, push it into buyOrders.
-
-For a new sell order, the algorithm is symmetric using buyOrders.
+Same logic, but against the buy priority queue using price ≥ sell.price.
 
 ## 4. Conclusions and Learnings
-Working on this project helped me understand how a real-time trading system can be modeled with basic data structures like priority queues. I learned how price-time priority is implemented in code using custom comparators, and how limit orders are matched step by step in a continuous limit order book. I also practiced building a simple text-based UI using ANSI escape codes, which made the simulator feel more dynamic. Overall, this assignment connected concepts from financial markets with core topics from data structures in C++.
+
+This project was a personal challenge, not just a homework assignment.
+I had to study a lot on my own to fully understand:
+
+- How modern electronic exchanges work
+
+- How price–time priority truly functions
+
+- How priority queues can simulate a CLOB
+
+- How matching engines operate internally
+
+Even though this is a simplified version of a real stock exchange, building it helped me connect my interest in finance, a field I almost chose as my major, with my current career in computer science.
+
+Designing this simulator let me imagine how systems behind the NYSE or NASDAQ operate under the hood. I enjoyed the process of breaking down a financial mechanism, modeling it with data structures, and turning it into a functional real-time simulation.
+
+Overall, this was one of the most enjoyable assignments because it combines two areas I’m passionate about:
+
+- finance, trading systems, order books
+
+- technology, algorithms, system design
+
+Building a mini-matching engine made me appreciate how complex real financial markets are, and how powerful data structures become when used in real-world systems.
