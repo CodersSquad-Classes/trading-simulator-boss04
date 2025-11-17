@@ -83,6 +83,7 @@ Below is the high-level design of the system, split into components.
                         │ Shows order book +    │
                         │ recent executed trades │
                         └──────────────────────┘
+````
 
 ### 3.2 Component Overview
 
